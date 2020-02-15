@@ -1,0 +1,14 @@
+package com.app.workschedule.Application;
+
+import android.app.Application;
+
+import com.facebook.stetho.Stetho;
+
+public class WorkScheduleApp extends Application {
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Stetho.initializeWithDefaults(this);
+    }
+}

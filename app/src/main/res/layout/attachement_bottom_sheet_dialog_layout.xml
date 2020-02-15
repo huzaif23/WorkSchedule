@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    >
+
+    <TextView
+        android:id="@+id/text_view_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Add Attachment"
+        android:textAppearance="?textAppearanceSearchResultTitle" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/text_view_title"
+        android:layout_marginTop="10dp"
+        android:id="@+id/main_container"
+        >
+
+        <TextView
+            android:id="@+id/text_view_picture_attach"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:drawableStart="@drawable/add_picture_ic"
+            android:drawablePadding="8dp"
+            android:text="Attach Picture"
+            android:textAlignment="center"
+            android:textAppearance="?android:textAppearanceSearchResultSubtitle" />
+
+        <TextView
+            android:id="@+id/text_view_voice_attach"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/text_view_picture_attach"
+            android:layout_marginTop="20dp"
+            android:drawableStart="@drawable/add_voice_ic"
+            android:drawablePadding="8dp"
+            android:text="Attach Voice Note"
+            android:textAlignment="center"
+            android:textAppearance="?android:textAppearanceSearchResultSubtitle" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/picture_container"
+        android:layout_below="@id/text_view_title"
+        android:layout_marginTop="10dp"
+        android:visibility="gone"
+        >
+
+        <View
+            android:id="@+id/strut"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_centerHorizontal="true" />
+
+        <ImageView
+            android:id="@+id/image_view_pick_from_gallery"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@id/strut"
+            android:src="@drawable/pick_from_gallery_ic" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/image_view_open_camera"
+            android:layout_marginTop="20dp"
+            android:layout_toLeftOf="@id/strut"
+            android:text="Pick From Gallery"
+            android:textAlignment="center"
+            android:textAppearance="?android:textAppearanceSearchResultSubtitle" />
+
+        <ImageView
+            android:id="@+id/image_view_open_camera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/strut"
+            android:src="@drawable/take_picture_ic" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/image_view_open_camera"
+            android:layout_marginTop="20dp"
+            android:layout_toRightOf="@id/strut"
+            android:text="Take Picture"
+            android:textAlignment="center"
+            android:textAppearance="?android:textAppearanceSearchResultSubtitle" />
+
+    </RelativeLayout>
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/text_view_title"
+        android:layout_marginTop="10dp"
+        android:id="@+id/voice_container"
+        android:visibility="gone"
+        >
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/image_view_voice"
+            android:src="@drawable/mic_off_ic"
+            android:layout_marginTop="20dp"
+            android:layout_centerHorizontal="true"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/text_view_voice"
+            android:text="Press mic to start recording"
+            android:layout_marginTop="20dp"
+            android:layout_below="@id/image_view_voice"
+            android:layout_centerHorizontal="true"
+            />
+
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:id="@+id/text_view_recording_time"-->
+<!--            android:layout_below="@id/text_view_voice"-->
+<!--            android:layout_centerHorizontal="true"-->
+<!--            android:layout_marginTop="20dp"-->
+<!--            android:textColor="@android:color/holo_red_dark"-->
+<!--            />-->
+
+        <Chronometer
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/text_view_recording_time"
+            android:layout_below="@id/text_view_voice"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:textColor="@android:color/holo_red_dark"
+            />
+
+    </RelativeLayout>
+
+
+</RelativeLayout>
