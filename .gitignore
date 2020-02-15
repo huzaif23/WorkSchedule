@@ -13,3 +13,4 @@
 .externalNativeBuild
 .cxx
 /app/release
+/app/src/main/java/com/app/workschedule/Fragment
