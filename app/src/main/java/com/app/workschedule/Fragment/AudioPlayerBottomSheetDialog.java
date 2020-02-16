@@ -2,6 +2,7 @@ package com.app.workschedule.Fragment;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.media.AudioManager;
 import android.media.Image;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -21,32 +22,16 @@ import androidx.core.content.FileProvider;
 
 import com.app.workschedule.R;
 import com.app.workschedule.Utils.Constants;
-import com.app.workschedule.Utils.MByteArrayDataSource;
-import com.google.android.exoplayer2.DefaultLoadControl;
-import com.google.android.exoplayer2.ExoPlaybackException;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.ExoPlayerFactory;
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
-import com.google.android.exoplayer2.source.ExtractorMediaSource;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.TrackGroupArray;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DataSpec;
-import com.google.android.exoplayer2.upstream.FileDataSource;
+
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
-import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 
+import static android.content.Context.AUDIO_SERVICE;
 
-public class AudioPlayerBottomSheetDialog extends BottomSheetDialogFragment implements View.OnClickListener, MediaPlayer.OnCompletionListener {
+
+public class AudioPlayerBottomSheetDialog extends BottomSheetDialogFragment implements View.OnClickListener {
 
 
     TextView textViewFileName;
@@ -126,12 +111,17 @@ public class AudioPlayerBottomSheetDialog extends BottomSheetDialogFragment impl
     private void playAudio() {
         //set up MediaPlayer
         mp = new MediaPlayer();
+
         try {
             mp.setDataSource(file.getPath());
             mp.prepare();
             mp.start();
-            mp.setOnCompletionListener(this);
-
+            mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    getDialog().dismiss();
+                }
+            });
             imageViewPlay.setImageDrawable(getActivity().getDrawable(R.drawable.pause_ic));
         } catch (Exception e) {
             e.printStackTrace();
@@ -146,9 +136,4 @@ public class AudioPlayerBottomSheetDialog extends BottomSheetDialogFragment impl
         }
     }
 
-
-    @Override
-    public void onCompletion(MediaPlayer mediaPlayer) {
-        getDialog().dismiss();
-    }
 }

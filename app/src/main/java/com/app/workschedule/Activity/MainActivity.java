@@ -5,12 +5,9 @@ import android.os.Bundle;
 import com.app.workschedule.Fragment.AddTaskFragment;
 import com.app.workschedule.Fragment.DashboardFragment;
 import com.app.workschedule.Fragment.NoHelperAddedFragment;
-import com.app.workschedule.Interface.ToggleToolbar;
 import com.app.workschedule.Utils.Constants;
 import com.app.workschedule.Utils.FragmentTransactionHelperClass;
 import com.app.workschedule.Utils.SharedPreferencHelperClass;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -20,9 +17,10 @@ import android.view.View;
 
 import com.app.workschedule.R;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity  {
 
     Toolbar toolbar;
+    Fragment fragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void launchDefaultFragment() {
         toolbar.setVisibility(View.GONE);
-        Fragment fragment;
         if (SharedPreferencHelperClass.getInstance(this).getHelperId().isEmpty()
                 &&
                 SharedPreferencHelperClass.getInstance(this).getUserType().equals(Constants.USER_TYPE_EMPLOYER)

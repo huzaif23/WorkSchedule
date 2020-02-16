@@ -1,12 +1,9 @@
 package com.app.workschedule.Adapter;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,7 +26,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+
 
 public class AttachmentAdapter extends RecyclerView.Adapter<AttachmentAdapter.AttachmentViewHolder> {
 
@@ -84,12 +81,6 @@ public class AttachmentAdapter extends RecyclerView.Adapter<AttachmentAdapter.At
                     bundle.putString(Constants.TASK_FILE_PATH_KEY,file.getPath());
                     audioPlayerBottomSheetDialog.setArguments(bundle);
                     audioPlayerBottomSheetDialog.show(fragment.getFragmentManager(), "audioPickerDialog");
-
-//                    Intent viewMediaIntent = new Intent();
-//                    viewMediaIntent.setAction(android.content.Intent.ACTION_VIEW);
-//                    viewMediaIntent.setDataAndType(uri, "audio/*");
-//                    viewMediaIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//                    context.startActivity(viewMediaIntent);
                 }
             }
         });
@@ -127,5 +118,4 @@ public class AttachmentAdapter extends RecyclerView.Adapter<AttachmentAdapter.At
 
     }
 
-//    private File getFileFromUri(String path) {}
 }

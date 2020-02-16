@@ -20,7 +20,7 @@ public class Constants {
     public static final String ADD_TASK_FRAGMENT = "add_task";
     public static final String TASK_DETAILS_FRAGMENT = "task_details";
 
-    public static final String BASE_URL = "https://austin.newpubgtown.com";
+    public static final String BASE_URL = "http://35.247.156.138/work_schedule/";
 
     public static final String TASK_ID_KEY = "task_id";
 
@@ -30,5 +30,9 @@ public class Constants {
     public static final String USER_TYPE_DOMESTIC_HELPER = "2";
 
     public static final String TASK_FILE_PATH_KEY = "file_path";
+
+    public static final String EDIT_MODE_TAG = "edit_mode";
+
+    public static final String SHOULD_REFRESH_TASK_LIST = "refresh_task_tag";
 
 }

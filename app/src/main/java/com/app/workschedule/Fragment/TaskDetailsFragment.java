@@ -104,6 +104,12 @@ public class TaskDetailsFragment extends Fragment implements View.OnClickListene
 
         btnMarkComplete.setOnClickListener(this);
 
+        if (taskId != 0) {
+            taskDetailsModel = dataAccessHelper.getTaskDetailsById(taskId);
+            if (taskDetailsModel != null)
+                setData();
+        }
+
         return view;
     }
 
@@ -114,11 +120,6 @@ public class TaskDetailsFragment extends Fragment implements View.OnClickListene
             btnMarkComplete.setVisibility(View.VISIBLE);
         else
             btnMarkComplete.setVisibility(View.GONE);
-        if (taskId != 0) {
-            taskDetailsModel = dataAccessHelper.getTaskDetailsById(taskId);
-            if (taskDetailsModel != null)
-                setData();
-        }
     }
 
     private void setData() {
@@ -207,6 +208,7 @@ public class TaskDetailsFragment extends Fragment implements View.OnClickListene
             smsManager.sendTextMessage(phoneNo, null, msg, null, null);
         } catch (Exception ex) {
             ex.printStackTrace();
+            Toast.makeText(getContext(),"Error:"+ex,Toast.LENGTH_LONG).show();
         }
     }
 
@@ -220,6 +222,7 @@ public class TaskDetailsFragment extends Fragment implements View.OnClickListene
                 customProgressBar.dismissDialog();
                 if (response.isSuccessful()) {
                     Snackbar.make(getView(), "Status has been changed", Snackbar.LENGTH_SHORT).show();
+                    getActivity().onBackPressed();
                 } else {
                     Snackbar.make(getView(), "Error occurred", Snackbar.LENGTH_SHORT).show();
                 }

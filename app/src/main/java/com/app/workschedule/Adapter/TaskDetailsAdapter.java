@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.app.workschedule.Activity.MainActivity;
+import com.app.workschedule.Fragment.AddTaskFragment;
 import com.app.workschedule.Fragment.TaskDetailsFragment;
 import com.app.workschedule.Model.TaskDetailsModel;
 import com.app.workschedule.R;
@@ -61,20 +62,33 @@ public class TaskDetailsAdapter extends RecyclerView.Adapter<TaskDetailsAdapter.
     @Override
     public void onBindViewHolder(@NonNull TaskDetailsViewHolder holder, int position) {
 
-        if(SharedPreferencHelperClass.getInstance(context).getUserType().equals(Constants.USER_TYPE_EMPLOYER))
-//            showPopup(holder.itemView,position);
+        if (SharedPreferencHelperClass.getInstance(context).getUserType().equals(Constants.USER_TYPE_EMPLOYER)
+                && taskDetailsModels.get(position).getStatus() == Constants.TASK_IN_PROGRESS
+        )
+            holder.imageViewEdit.setVisibility(View.VISIBLE);
+        else
+            holder.imageViewEdit.setVisibility(View.GONE);
 
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ((MainActivity) activity).toggleToolbar(true, "Task Details");
-                Fragment fragment = new TaskDetailsFragment();
-                Bundle bundle = new Bundle();
-                bundle.putInt(Constants.TASK_ID_KEY, taskDetailsModels.get(position).getId());
-                fragment.setArguments(bundle);
-                FragmentTransactionHelperClass.getInstance().changeFragment(fragment, context, Constants.TASK_DETAILS_FRAGMENT, true);
-            }
+        holder.imageViewEdit.setOnClickListener(view -> {
+            ((MainActivity) activity).toggleToolbar(true, "Edit Task");
+            Fragment fragment = new AddTaskFragment();
+            Bundle bundle = new Bundle();
+            bundle.putInt(Constants.TASK_ID_KEY, taskDetailsModels.get(position).getId());
+            bundle.putBoolean(Constants.EDIT_MODE_TAG, true);
+            fragment.setArguments(bundle);
+            FragmentTransactionHelperClass.getInstance().changeFragment(fragment, context, Constants.TASK_DETAILS_FRAGMENT, true);
         });
+
+        holder.itemView.setOnClickListener(view -> {
+            ((MainActivity) activity).toggleToolbar(true, "Task Details");
+            Fragment fragment = new TaskDetailsFragment();
+            Bundle bundle = new Bundle();
+            bundle.putInt(Constants.TASK_ID_KEY, taskDetailsModels.get(position).getId());
+            fragment.setArguments(bundle);
+            FragmentTransactionHelperClass.getInstance().changeFragment(fragment, context, Constants.TASK_DETAILS_FRAGMENT, true);
+        });
+
+
         holder.textViewTitle.setText("Task # " + (position + 1));
         holder.textViewTime.setText(DateFormatter.getInstance().formatTimeTo12Hr(taskDetailsModels.get(position).getTime()));
 
@@ -102,30 +116,6 @@ public class TaskDetailsAdapter extends RecyclerView.Adapter<TaskDetailsAdapter.
         }
     }
 
-    private void showPopup(View view, final int position) {
-        // pass the imageview id
-        View menuItemView = view.findViewById(R.id.image_view_menu);
-        PopupMenu popup = new PopupMenu(activity, menuItemView);
-        MenuInflater inflate = popup.getMenuInflater();
-        inflate.inflate(R.menu.menu_task, popup.getMenu());
-
-        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                switch (item.getItemId()) {
-                    case R.id.edit:
-                        // do what you need.
-                        break;
-                    default:
-                        return false;
-                }
-                return false;
-            }
-        });
-        popup.show();
-    }
-
     @Override
     public int getItemCount() {
         return taskDetailsModels.size();
@@ -134,6 +124,7 @@ public class TaskDetailsAdapter extends RecyclerView.Adapter<TaskDetailsAdapter.
     protected class TaskDetailsViewHolder extends RecyclerView.ViewHolder {
 
         TextView textViewTitle, textViewDate, textViewTime, textViewStatus, textViewStatusLabel, textViewRepeatDays;
+        ImageView imageViewEdit;
 
         public TaskDetailsViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -143,6 +134,7 @@ public class TaskDetailsAdapter extends RecyclerView.Adapter<TaskDetailsAdapter.
             textViewStatus = itemView.findViewById(R.id.text_view_status);
             textViewStatusLabel = itemView.findViewById(R.id.text_view_status_label);
             textViewRepeatDays = itemView.findViewById(R.id.text_view_repeat_task_days);
+            imageViewEdit = itemView.findViewById(R.id.image_view_menu);
         }
     }
 

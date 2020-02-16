@@ -72,11 +72,13 @@ public class DashboardFragment extends Fragment implements View.OnClickListener,
     TextView textViewUserName;
     SwipeRefreshLayout refreshLayout;
     ImageView imageViewLogOut;
+    View view;
 
     DataAccessHelper dataAccessHelper;
     TaskDetailsAdapter adapter;
     FileUtils fileUtils;
     AlertDialog alertDialog;
+
 
     public DashboardFragment() {
         // Required empty public constructor
@@ -87,67 +89,61 @@ public class DashboardFragment extends Fragment implements View.OnClickListener,
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_dashboard, container, false);
-        recyclerView = view.findViewById(R.id.rv_task);
-        emptyContainer = view.findViewById(R.id.empty_container);
-        textViewTotalTask = view.findViewById(R.id.text_view_total_task);
-        textViewTaskInProgress = view.findViewById(R.id.text_view_task_in_progress);
-        textViewTaskCompleted = view.findViewById(R.id.text_view_task_completed);
-        textViewUserName = view.findViewById(R.id.text_view_user_name);
-        imageViewLogOut = view.findViewById(R.id.image_view_log_out);
 
-        fab = view.findViewById(R.id.fab_add_task);
-        refreshLayout = view.findViewById(R.id.pullToRefresh);
+        if (view == null) {
+
+            view = inflater.inflate(R.layout.fragment_dashboard, container, false);
+            recyclerView = view.findViewById(R.id.rv_task);
+            emptyContainer = view.findViewById(R.id.empty_container);
+            textViewTotalTask = view.findViewById(R.id.text_view_total_task);
+            textViewTaskInProgress = view.findViewById(R.id.text_view_task_in_progress);
+            textViewTaskCompleted = view.findViewById(R.id.text_view_task_completed);
+            textViewUserName = view.findViewById(R.id.text_view_user_name);
+            imageViewLogOut = view.findViewById(R.id.image_view_log_out);
+
+            fab = view.findViewById(R.id.fab_add_task);
+            refreshLayout = view.findViewById(R.id.pullToRefresh);
+
+
+            fileUtils = FileUtils.getInstance(getContext());
+
+            recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+
+                @Override
+                public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                    super.onScrolled(recyclerView, dx, dy);
+                    if (dy > 0) {
+                        fab.shrink();
+                    } else {
+                        fab.extend();
+                    }
+                }
+
+                @Override
+                public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                    super.onScrollStateChanged(recyclerView, newState);
+
+                    if (newState == AbsListView.OnScrollListener.SCROLL_STATE_FLING) {
+                        // Do something
+                    } else if (newState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL) {
+                        // Do something
+                    } else {
+                        // Do something
+                    }
+                }
+            });
+
+
+            recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+            recyclerView.addItemDecoration(new SpaceItemDecoration(getResources().getDimensionPixelSize(R.dimen.recycler_view_margin)));
+
+            fab.setOnClickListener(this);
+            imageViewLogOut.setOnClickListener(this);
+            refreshLayout.setOnRefreshListener(this);
+            fetchTasksFromServer();
+        }
 
         Toast.makeText(getContext(), "Swipe down to refresh task list", Toast.LENGTH_SHORT).show();
-
-
-
-        fileUtils = FileUtils.getInstance(getContext());
-
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                if (dy > 0) {
-                    fab.shrink();
-                } else {
-                    fab.extend();
-                }
-            }
-
-            @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                super.onScrollStateChanged(recyclerView, newState);
-
-                if (newState == AbsListView.OnScrollListener.SCROLL_STATE_FLING) {
-                    // Do something
-                } else if (newState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL) {
-                    // Do something
-                } else {
-                    // Do something
-                }
-            }
-        });
-
-        if (getActivity() != null)
-            ((MainActivity) getActivity()).toggleToolbar(false, "");
-
-
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.addItemDecoration(new SpaceItemDecoration(getResources().getDimensionPixelSize(R.dimen.recycler_view_margin)));
-
-        if (SharedPreferencHelperClass.getInstance(getContext()).getUserType().equals(Constants.USER_TYPE_EMPLOYER))
-            fab.setVisibility(View.VISIBLE);
-        else
-            fab.setVisibility(View.GONE);
-
-        fab.setOnClickListener(this);
-        imageViewLogOut.setOnClickListener(this);
-        refreshLayout.setOnRefreshListener(this);
-
-        fetchTasksFromServer();
 
         return view;
     }
@@ -165,6 +161,14 @@ public class DashboardFragment extends Fragment implements View.OnClickListener,
             recyclerView.setVisibility(View.GONE);
             emptyContainer.setVisibility(View.VISIBLE);
         }
+
+        if (SharedPreferencHelperClass.getInstance(getContext()).getUserType().equals(Constants.USER_TYPE_EMPLOYER))
+            fab.setVisibility(View.VISIBLE);
+        else
+            fab.setVisibility(View.GONE);
+
+        if (getActivity() != null)
+            ((MainActivity) getActivity()).toggleToolbar(false, "");
     }
 
     private void initRecyclerView(List<TaskDetailsModel> taskDetailsModels) {
@@ -177,7 +181,7 @@ public class DashboardFragment extends Fragment implements View.OnClickListener,
         setTaskDetails(taskDetailsModels);
     }
 
-    private void fetchTasksFromServer() {
+    public void fetchTasksFromServer() {
         CustomProgressBar customProgressBar = CustomProgressBar.getInstance(getContext());
         customProgressBar.addActivity(getContext());
         customProgressBar.showDialog();
@@ -186,84 +190,87 @@ public class DashboardFragment extends Fragment implements View.OnClickListener,
         webService.getTasksFromServer(sharedPreferencHelperClass.getUserId(), sharedPreferencHelperClass.getUserType()).enqueue(new Callback<ResponseFromServerTasks>() {
             @Override
             public void onResponse(Call<ResponseFromServerTasks> call, Response<ResponseFromServerTasks> response) {
-                customProgressBar.dismissDialog();
                 if (response.isSuccessful()) {
                     if (response.body().getStatus()) {
-                        for (ResponseFromServerTaskDetails x : response.body().getTasks()) {
-                            SQLiteDatabase db = dataAccessHelper.getDb();
-                            db.beginTransaction();
-                            try {
-                                int id = dataAccessHelper.checkIfTaskAlreadyExists(x.getId());
+                        if (response.body().getTasks().size() > 0) {
+                            for (ResponseFromServerTaskDetails x : response.body().getTasks()) {
+                                SQLiteDatabase db = dataAccessHelper.getDb();
+                                db.beginTransaction();
+                                try {
+                                    int id = dataAccessHelper.checkIfTaskAlreadyExists(x.getId());
 
-                                if (id == 0) {
-                                    id = dataAccessHelper.insertTask(
-                                            x.getMobDate()
-                                            , x.getMobTime()
-                                            , x.getInstruction()
-                                            , Integer.parseInt(x.getNotify())
-                                            , Integer.parseInt(x.getStatus())
-                                            , x.getDaysRepeat()
-                                            , x.getId()
-                                    );
-                                } else {
-                                    dataAccessHelper.updateTaskDetails(id
-                                            , x.getMobDate()
-                                            , x.getMobTime()
-                                            , x.getInstruction()
-                                            , Integer.parseInt(x.getNotify())
-                                            , Integer.parseInt(x.getStatus())
-                                            , x.getDaysRepeat()
-                                    );
-                                    dataAccessHelper.delteAttachmentsById(id);
-                                }
-                                for (ResponseFromServerAttachments attachments : x.getAttachments()) {
-                                    int finalId = id;
-                                    webService.downloadFile(Constants.BASE_URL + "/" + attachments.getFilePath()).enqueue(new Callback<ResponseBody>() {
-                                        @Override
-                                        public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                                            String fileName = "";
-                                            if (attachments.getFileType().equalsIgnoreCase(Constants.ATTACHMENT_TYPE_AUDIO)) {
-                                                fileName = fileUtils.createAudioDirectory() + File.separator + DateFormatter.getInstance().getTimeStampForFileName() + ".mp3";
-                                            } else {
-                                                fileName = fileUtils.createPictureDirectory() + File.separator + DateFormatter.getInstance().getTimeStampForFileName() + ".jpg";
+                                    if (id == 0) {
+                                        id = dataAccessHelper.insertTask(
+                                                x.getMobDate()
+                                                , x.getMobTime()
+                                                , x.getInstruction()
+                                                , Integer.parseInt(x.getNotify())
+                                                , Integer.parseInt(x.getStatus())
+                                                , x.getDaysRepeat()
+                                                , x.getId()
+                                        );
+                                    } else {
+                                        dataAccessHelper.updateTaskDetails(id
+                                                , x.getMobDate()
+                                                , x.getMobTime()
+                                                , x.getInstruction()
+                                                , Integer.parseInt(x.getNotify())
+                                                , Integer.parseInt(x.getStatus())
+                                                , x.getDaysRepeat()
+                                        );
+                                        dataAccessHelper.delteAttachmentsById(id);
+                                    }
+                                    for (ResponseFromServerAttachments attachments : x.getAttachments()) {
+                                        int finalId = id;
+                                        webService.downloadFile(Constants.BASE_URL + "/" + attachments.getFilePath()).enqueue(new Callback<ResponseBody>() {
+                                            @Override
+                                            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                                                String fileName = "";
+                                                if (attachments.getFileType().equalsIgnoreCase(Constants.ATTACHMENT_TYPE_AUDIO)) {
+                                                    fileName = fileUtils.createAudioDirectory() + File.separator + DateFormatter.getInstance().getTimeStampForFileName() + ".mp3";
+                                                } else {
+                                                    fileName = fileUtils.createPictureDirectory() + File.separator + DateFormatter.getInstance().getTimeStampForFileName() + ".jpg";
 
+                                                }
+
+                                                File file = new File(fileName);
+                                                FileOutputStream fileOutputStream = null;
+                                                try {
+                                                    fileOutputStream = new FileOutputStream(file);
+                                                    IOUtils.write(response.body().bytes(), fileOutputStream);
+                                                    dataAccessHelper.insertAttachment(
+                                                            file.getPath()
+                                                            , attachments.getFileType()
+                                                            , finalId
+                                                    );
+                                                } catch (FileNotFoundException e) {
+                                                    e.printStackTrace();
+                                                } catch (IOException e) {
+                                                    e.printStackTrace();
+                                                }
                                             }
 
-                                            File file = new File(fileName);
-                                            FileOutputStream fileOutputStream = null;
-                                            try {
-                                                fileOutputStream = new FileOutputStream(file);
-                                                IOUtils.write(response.body().bytes(), fileOutputStream);
-                                                dataAccessHelper.insertAttachment(
-                                                        file.getPath()
-                                                        , attachments.getFileType()
-                                                        , finalId
-                                                );
-                                            } catch (FileNotFoundException e) {
-                                                e.printStackTrace();
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
+                                            @Override
+                                            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                                                Log.d("test", t.getMessage());
+                                                customProgressBar.dismissDialog();
                                             }
-                                        }
+                                        });
+                                    }
 
-                                        @Override
-                                        public void onFailure(Call<ResponseBody> call, Throwable t) {
-                                            Log.d("test", t.getMessage());
-                                            customProgressBar.dismissDialog();
-                                        }
-                                    });
+                                    customProgressBar.dismissDialog();
+                                    initRecyclerView(dataAccessHelper.getTaskDetails());
+                                    Snackbar.make(getView(), "Tasks downloaded successfully", Snackbar.LENGTH_SHORT).show();
+                                    db.setTransactionSuccessful();
+                                } catch (Exception e) {
+                                    customProgressBar.dismissDialog();
+                                    e.printStackTrace();
+                                } finally {
+                                    db.endTransaction();
                                 }
-
-
-                                initRecyclerView(dataAccessHelper.getTaskDetails());
-                                Snackbar.make(getView(), "Tasks downloaded successfully", Snackbar.LENGTH_SHORT).show();
-                                db.setTransactionSuccessful();
-                            } catch (Exception e) {
-                                customProgressBar.dismissDialog();
-                                e.printStackTrace();
-                            } finally {
-                                db.endTransaction();
                             }
+                        } else {
+                            customProgressBar.dismissDialog();
                         }
                     } else {
                         customProgressBar.dismissDialog();
@@ -274,7 +281,6 @@ public class DashboardFragment extends Fragment implements View.OnClickListener,
                     Snackbar.make(getView(), "Please check your internet connection", Snackbar.LENGTH_SHORT).show();
                 }
             }
-
 
             @Override
             public void onFailure(Call<ResponseFromServerTasks> call, Throwable t) {

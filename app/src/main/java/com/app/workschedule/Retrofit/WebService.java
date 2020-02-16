@@ -64,5 +64,18 @@ public interface WebService {
     @POST("task_status.php")
     Call<JsonObject> markComplete(@Field("task_id") String taskId,@Field("status") String status);
 
+    @Multipart
+    @POST("edit_task.php")
+    Call<JsonObject> editTask(
+            @Part("date") RequestBody date
+            , @Part("time") RequestBody time
+            , @Part("instruction") RequestBody instruction
+            , @Part("days_repeat") RequestBody repeat
+            , @Part("pictures") RequestBody picture
+            , @Part("notify") RequestBody notify
+            , @Part("task_id") int taskId
+            , @Part MultipartBody.Part file
+    );
+
 
 }

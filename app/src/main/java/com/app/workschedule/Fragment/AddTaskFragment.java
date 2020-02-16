@@ -1,27 +1,27 @@
 package com.app.workschedule.Fragment;
 
 
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.app.workschedule.Activity.MainActivity;
 import com.app.workschedule.Adapter.AttachmentAdapter;
 import com.app.workschedule.DB.DataAccessHelper;
 import com.app.workschedule.Interface.DeleteItem;
 import com.app.workschedule.Interface.PopulateAttachmentList;
+import com.app.workschedule.Model.TaskDetailsModel;
 import com.app.workschedule.R;
 import com.app.workschedule.Retrofit.WebService;
 import com.app.workschedule.Retrofit.WebServiceFactory;
@@ -43,14 +43,10 @@ import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +72,7 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
     TextView textViewAddAttachement;
     RecyclerView recyclerViewAttachment;
     MaterialButton btnAdd;
+    View view;
 
 
     List<Integer> chipRepeatTaskIds = new ArrayList<>();
@@ -84,18 +81,29 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
     DataAccessHelper dataAccessHelper;
     String selectedTime;
     String selectedDate;
+    WebService webService;
     CustomProgressBar customProgressBar;
+    int taskId = 0;
+    private boolean shouldOpenInEditMode = false;
+    String serverTaskId;
 
 
     public AddTaskFragment() {
         // Required empty public constructor
     }
 
+    @Override
+    public void setArguments(@Nullable Bundle args) {
+        super.setArguments(args);
+        if (args != null) {
+            taskId = args.getInt(Constants.TASK_ID_KEY);
+            shouldOpenInEditMode = args.getBoolean(Constants.EDIT_MODE_TAG);
+        }
+    }
 
     @Override
     public void onStart() {
         super.onStart();
-        dataAccessHelper = DataAccessHelper.getInstance(getContext());
     }
 
     @Override
@@ -133,6 +141,8 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
 
         textInputEditTextInstructions.clearFocus();
 
+        webService = WebServiceFactory.getInstance();
+        dataAccessHelper = DataAccessHelper.getInstance(getContext());
 
         // setting attachment recycler view
         recyclerViewAttachment.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -141,7 +151,14 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
 
         attachments = new HashMap<>();
         customProgressBar = CustomProgressBar.getInstance(getContext());
+        this.view = view;
 
+
+        if (shouldOpenInEditMode && taskId != 0) {
+            TaskDetailsModel taskDetailsModel = dataAccessHelper.getTaskDetailsById(taskId);
+            if (taskDetailsModel != null)
+                setTaskData(taskDetailsModel);
+        }
 
         return view;
     }
@@ -158,6 +175,46 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
         String minutes = String.format("%02d", minute);
         selectedTime = hour + ":" + minutes;
         textInputEditTextTime.setText(DateFormatter.getInstance().formatTimeTo12Hr(selectedTime));
+    }
+
+    private void setTaskData(TaskDetailsModel taskData) {
+
+        selectedDate = taskData.getDate();
+        selectedTime = taskData.getTime();
+        serverTaskId = taskData.getServerId();
+
+        List<String> attachmentsById = dataAccessHelper.getAttachmentsById(taskId);
+
+        DateFormatter dateFormatter = DateFormatter.getInstance();
+        textInputEditTextDate.setText(dateFormatter.formatDateWithDay(taskData.getDate()));
+        textInputEditTextTime.setText(dateFormatter.formatTimeTo12Hr(taskData.getTime()));
+        textInputEditTextInstructions.setText(taskData.getInstruction());
+        checkBoxAllowSms.setChecked(taskData.getShouldAllowSms() == 1);
+
+        if (taskData.getRepeatDays().equalsIgnoreCase(Constants.REPEAT_EVERYDAY)) {
+            checkBoxRepeatDaily.setChecked(true);
+            markAllDays();
+        } else {
+            String[] days = taskData.getRepeatDays().split(",");
+            for (String day : days) {
+                for (Integer id : chipRepeatTaskIds) {
+                    Chip chip = view.findViewById(id);
+                    if (chip.getText().toString().equalsIgnoreCase(day))
+                        chip.setChecked(true);
+                }
+            }
+        }
+
+        for (String x : attachmentsById) {
+            attachments.put(x, x);
+        }
+
+        attachmentAdapter.addData(attachmentsById);
+        attachmentAdapter.notifyDataSetChanged();
+        recyclerViewAttachment.setVisibility(View.VISIBLE);
+
+        btnAdd.setText("Edit Task");
+
     }
 
     @Override
@@ -177,7 +234,10 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
                 if (!textInputEditTextInstructions.getText().toString().isEmpty())
                     if (!textInputEditTextTime.getText().toString().isEmpty())
                         if (!textInputEditTextDate.getText().toString().isEmpty())
-                            addTask();
+                            if (shouldOpenInEditMode && taskId != 0)
+                                editTask();
+                            else
+                                addTask();
                         else
                             Toast.makeText(getContext(), "Please enter date", Toast.LENGTH_SHORT).show();
                     else
@@ -187,6 +247,7 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
                 break;
         }
     }
+
 
     private void showDatePickerDialog() {
         Calendar now = Calendar.getInstance();
@@ -229,14 +290,14 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
     private void markAllDays() {
         for (Integer id : chipRepeatTaskIds) {
             chipGroupRepeatTask.check(id);
-            getView().findViewById(id).setEnabled(false);
+            view.findViewById(id).setEnabled(false);
         }
     }
 
     private void enableChips() {
         chipGroupRepeatTask.clearCheck();
         for (Integer id : chipRepeatTaskIds) {
-            getView().findViewById(id).setEnabled(true);
+            view.findViewById(id).setEnabled(true);
         }
     }
 
@@ -265,19 +326,79 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
         addTaskToServer();
     }
 
-    private void resetFields() {
-        textInputEditTextDate.setText("");
-        textInputEditTextTime.setText("");
-        textInputEditTextInstructions.setText("");
-        attachments.clear();
-        attachmentAdapter.clearData();
-        attachmentAdapter.notifyDataSetChanged();
-        checkBoxRepeatDaily.setChecked(false);
-        checkBoxAllowSms.setChecked(false);
-        for (Integer x : chipRepeatTaskIds) {
-            Chip chip = getView().findViewById(x);
-            chip.setChecked(false);
+    private void editTask() {
+        customProgressBar.addActivity(getContext());
+        customProgressBar.showDialog();
+        String pictures = createPictureArray();
+        String days = "";
+        if (checkBoxRepeatDaily.isChecked())
+            days = Constants.REPEAT_EVERYDAY;
+        else {
+            List<Integer> checkedIds = chipGroupRepeatTask.getCheckedChipIds();
+            for (Integer x : checkedIds) {
+                Chip chip = view.findViewById(x);
+                if (x == checkedIds.size() - 1) {
+                    days = days.concat(chip.getText().toString());
+                } else {
+                    days = days.concat(chip.getText().toString() + ",");
+
+                }
+            }
         }
+
+        // create multipart
+        MultipartBody.Part part = createMultiPart();
+
+        RequestBody date = RequestBody.create(MediaType.parse("text/plain"),
+                selectedDate
+        );
+        RequestBody time = RequestBody.create(MediaType.parse("text/plain"),
+                selectedTime
+        );
+        RequestBody instruction = RequestBody.create(MediaType.parse("text/plain"),
+                textInputEditTextInstructions.getText().toString()
+        );
+
+        RequestBody repeat = RequestBody.create(MediaType.parse("text/plain"),
+                days
+        );
+
+        RequestBody picture = RequestBody.create(MediaType.parse("text/plain"),
+                pictures
+        );
+        RequestBody notify = RequestBody.create(MediaType.parse("text/plain"),
+                checkBoxAllowSms.isChecked() ? "1" : "0"
+        );
+
+
+        webService.editTask(
+                date
+                , time
+                , instruction
+                , repeat
+                , picture
+                , notify
+                , Integer.parseInt(serverTaskId)
+                , part
+        ).enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                customProgressBar.dismissDialog();
+                if (response.isSuccessful()) {
+                    Snackbar.make(view, "Successfully edited task", Snackbar.LENGTH_SHORT).show();
+                    getActivity().onBackPressed();
+                } else {
+                    Snackbar.make(view, "Error occurred", Snackbar.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                customProgressBar.dismissDialog();
+                Snackbar.make(view, "Error occurred", Snackbar.LENGTH_SHORT).show();
+            }
+        });
+
     }
 
 
@@ -292,7 +413,7 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
         else {
             List<Integer> checkedIds = chipGroupRepeatTask.getCheckedChipIds();
             for (Integer x : checkedIds) {
-                Chip chip = getView().findViewById(x);
+                Chip chip = view.findViewById(x);
                 if (x == checkedIds.size() - 1) {
                     days = days.concat(chip.getText().toString());
                 } else {
@@ -335,8 +456,6 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
                 sharedPreferencHelperClass.getHelperId()
         );
 
-
-        WebService webService = WebServiceFactory.getInstance();
         webService.addTask(
                 userId
                 , assignedId
@@ -352,12 +471,12 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                 customProgressBar.dismissDialog();
                 if (response.isSuccessful()) {
-                    Snackbar.make(getView(), "Successfully added task", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(view, "Successfully added task", Snackbar.LENGTH_LONG).show();
                     resetFields();
-                    ((ScrollView) getView().findViewById(R.id.root_layout)).fullScroll(ScrollView.FOCUS_UP);
+                    getActivity().onBackPressed();
 
                 } else {
-                    Snackbar.make(getView(), "Server error occurred", Snackbar.LENGTH_SHORT).show();
+                    Snackbar.make(view, "Server error occurred", Snackbar.LENGTH_SHORT).show();
                 }
             }
 
@@ -365,9 +484,25 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
             public void onFailure(Call<JsonObject> call, Throwable t) {
                 customProgressBar.dismissDialog();
                 Log.d("test", "" + t.getMessage());
-                Snackbar.make(getView(), "Error occurred while uploading data", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(view, "Error occurred while uploading data", Snackbar.LENGTH_SHORT).show();
             }
         });
+    }
+
+
+    private void resetFields() {
+        textInputEditTextDate.setText("");
+        textInputEditTextTime.setText("");
+        textInputEditTextInstructions.setText("");
+        attachments.clear();
+        attachmentAdapter.clearData();
+        attachmentAdapter.notifyDataSetChanged();
+        checkBoxRepeatDaily.setChecked(false);
+        checkBoxAllowSms.setChecked(false);
+        for (Integer x : chipRepeatTaskIds) {
+            Chip chip = view.findViewById(x);
+            chip.setChecked(false);
+        }
     }
 
     private String createPictureArray() {
@@ -409,4 +544,6 @@ public class AddTaskFragment extends Fragment implements DatePickerDialog.OnDate
             multipartBody = MultipartBody.Part.createFormData("audio_files", "");
         return multipartBody;
     }
+
+
 }

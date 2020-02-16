@@ -25,6 +25,7 @@ import android.widget.RadioGroup;
 import com.app.workschedule.R;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.gson.JsonObject;
+import com.hbb20.CountryCodePicker;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -42,6 +43,7 @@ public class Signup extends AppCompatActivity implements View.OnClickListener {
     MaterialButton btnSignUp;
     ConstraintLayout rootLayout;
     RadioGroup radioGroup;
+    CountryCodePicker ccp;
 
     CustomProgressBar customProgressBar;
     boolean shouldLogin = false;
@@ -59,8 +61,12 @@ public class Signup extends AppCompatActivity implements View.OnClickListener {
         btnSignUp = findViewById(R.id.btn_signup);
         rootLayout = findViewById(R.id.root_layout);
         radioGroup = findViewById(R.id.radio_group_user_type);
+        ccp = findViewById(R.id.countryCodePicker);
 
         btnSignUp.setOnClickListener(this);
+        ccp.registerCarrierNumberEditText(editTextUserMobile);
+
+
 
         customProgressBar = CustomProgressBar.getInstance(Signup.this);
 
@@ -84,7 +90,10 @@ public class Signup extends AppCompatActivity implements View.OnClickListener {
                         if (!editTextUserMobile.getText().toString().isEmpty()) {
                             if (!editTextUserPassword.getText().toString().isEmpty()) {
                                 if (radioGroup.getCheckedRadioButtonId() != -1)
-                                    checkSignUp();
+                                    if(ccp.isValidFullNumber())
+                                        checkSignUp();
+                                    else
+                                        Snackbar.make(rootLayout, "Mobile number is not valid", Snackbar.LENGTH_SHORT).show();
                                 else
                                     Snackbar.make(rootLayout, "Please select user type", Snackbar.LENGTH_SHORT).show();
                             } else {
@@ -108,7 +117,7 @@ public class Signup extends AppCompatActivity implements View.OnClickListener {
 
         String userName = editTextUserName.getText().toString();
         String userEmail = editTextUserEmail.getText().toString();
-        String userMobile = editTextUserMobile.getText().toString();
+        String userMobile = ccp.getFullNumberWithPlus();
         String userPassword = editTextUserPassword.getText().toString();
         String type = radioGroup.getCheckedRadioButtonId() == R.id.radio_employer ? "1" : "2";
         String employerId = SharedPreferencHelperClass.getInstance(this).getUserId();
